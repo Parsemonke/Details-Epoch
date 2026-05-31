@@ -424,15 +424,21 @@ do --> data for Onyxia's Lair
 
 	local PORTRAIT_LIST = {
 		"ui-ej-boss-onyxia",
+		"ui-ej-boss-onyxia",
+		"ui-ej-boss-onyxia",
 	}
 
 	local ENCOUNTER_ID_CL = {
-		10184,
-		[10184] = 1, --Onyxia
+		45136, 45125, 10184,
+		[45136] = 1, --Ortorg the Ardent
+		[45125] = 2, --Artressian
+		[10184] = 3, --Onyxia
 	}
 
 	--> install the raid
 	local BOSSNAMES = {
+		"Ortorg the Ardent",
+		"Artressian",
 		LBB["Onyxia"],
 	}
 
@@ -460,7 +466,14 @@ do --> data for Onyxia's Lair
 		encounters = ENCOUNTERS,
 
 		boss_ids = {
-			[10184] = 1, --Onyxia
+			[45136] = 1, --Ortorg the Ardent
+			[45125] = 2, --Artressian
+			[10184] = 3, --Onyxia
+			[12129] = 0, --Onyxian Warder (trash)
+			[45237] = 0, --Onyxian Flameweaver (trash)
+			[45238] = 0, --Onyxian Honorguard (trash)
+			[45132] = 0, --Efevian (drake trash)
+			[45131] = 0, --Evorian (drake trash)
 		},
 	})
 end
