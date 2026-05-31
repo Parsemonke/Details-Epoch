@@ -227,7 +227,6 @@ function _detalhes:SendMsgToChannel(msg, channel, towho)
 		if instanceType == "pvp" then
 			channel = "BATTLEGROUND"
 		end
-
 		SendChatMessage(msg, channel)
 	elseif channel == "CHANNEL" then
 		SendChatMessage(msg, channel, nil, GetChannelName(towho))
@@ -235,12 +234,9 @@ function _detalhes:SendMsgToChannel(msg, channel, towho)
 		SendChatMessage(msg, channel, nil, towho)
 	elseif channel == "PRINT" then
 		print(msg)
-	else -- say channel?
-		if IsInInstance() then --patch 80205 cannot use 'say' channel outside instances
-			SendChatMessage(msg, channel)
-		end
---	elseif(channel == "SAY" or channel == "YELL" or channel == "RAID_WARNING" or channel == "OFFICER" or channel == "GUILD" or channel == "EMOTE") then
-
+	else -- SAY, YELL, RAID_WARNING, GUILD, OFFICER, etc.
+		-- In 3.3.5, SAY/YELL work globally. The 8.0 instance restriction does not apply.
+		SendChatMessage(msg, channel)
 	end
 end
 
