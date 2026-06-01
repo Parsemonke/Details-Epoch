@@ -6,7 +6,6 @@ Custom encounter detection and class updates for WowEpoch server.
 
 - Custom Onyxia raid: Ortorg, Artressian, Onyxia
 - Class detection for Epoch talents
-- Trash mob segmentation
 
 ## Features
 
