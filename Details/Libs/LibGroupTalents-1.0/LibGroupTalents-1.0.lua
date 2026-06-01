@@ -66,7 +66,7 @@ Events:
 
 local TalentQuery = LibStub("LibTalentQuery-1.0")
 
-local MAJOR, MINOR = "LibGroupTalents-1.0", tonumber(("$Rev: 55 $"):match("(%d+)"))
+local MAJOR, MINOR = "LibGroupTalents-1.0", 10055
 local lib = LibStub:NewLibrary(MAJOR, MINOR)
 if not lib then return end
 
@@ -76,6 +76,23 @@ lib.roster = lib.roster or {}
 lib.classTalentData = lib.classTalentData or {}
 lib.batch = lib.batch or {}
 lib.pendingStorageStrings = lib.pendingStorageStrings or {}
+
+local customTreeNames = {
+	WARRIOR = {"Arms", "Protection", "Fury"},
+	PALADIN = {"Retribution", "Holy", "Protection"},
+	DRUID = {"Feral", "Restoration", "Balance"},
+	HUNTER = {"Beast Mastery", "Survival", "Marksmanship"},
+	ROGUE = {"Combat", "Assassination", "Subtlety"},
+	PRIEST = {"Discipline", "Holy", "Shadow"},
+	SHAMAN = {"Elemental", "Restoration", "Enhancement"},
+	MAGE = {"Fire", "Frost", "Arcane"},
+	WARLOCK = {"Destruction", "Affliction", "Demonology"},
+}
+
+local warriorDefiance = GetSpellInfo(12789)				-- Defiance
+local druidThickHide = GetSpellInfo(16929)				-- Thick Hide
+local druidFeralInstinct = GetSpellInfo(16949)			-- Feral Instinct
+local druidIntensity = GetSpellInfo(17108) or GetSpellInfo(17107) or GetSpellInfo(17106)	-- Intensity
 
 local function UnitFullName(unit)
 	local name, realm = UnitName(unit)
@@ -462,6 +479,17 @@ local function CountTree(branch)
 	return count
 end
 
+local function TalentStringHasTalent(class, talents, talentName)
+	if (class and talents and talentName) then
+		local data = lib.classTalentData[class]
+		local info = data and data.list and data.list[talentName]
+		if (info) then
+			local str = talents[info.treeIndex]
+			return str and ((str:byte(info.index) or 48) - 48) > 0 or nil
+		end
+	end
+end
+
 -- TalentWeight
 local function TalentWeight(talents, class)
 	if (talents and #talents == 3 and class) then
@@ -472,6 +500,16 @@ local function TalentWeight(talents, class)
 			weight = 2
 		elseif (c3 > c1 and c3 > c2) then
 			weight = 3
+		end
+
+		if (class == "WARRIOR" and TalentStringHasTalent(class, talents, warriorDefiance) and c3 >= c1) then
+			weight = 2
+		elseif (class == "DRUID" and (
+			TalentStringHasTalent(class, talents, druidThickHide)
+			or TalentStringHasTalent(class, talents, druidFeralInstinct)
+			or (TalentStringHasTalent(class, talents, druidIntensity) and c1 > c2)
+		)) then
+			weight = 1
 		end
 
 		local data = lib.classTalentData[class]
@@ -673,6 +711,10 @@ function GetClassTalentData(unit)
 					local tree = new()
 					local _
 					tree.name, tree.icon, _, tree.background = GetTalentTabInfo(tab, isnotplayer)
+					local customNames = customTreeNames[class]
+					if (customNames and customNames[tab]) then
+						tree.name = customNames[tab]
+					end
 					tinsert(data, tree)
 
 					tree.list = new()
@@ -1167,8 +1209,6 @@ function lib:CheckForMissingTalents()
 end
 
 do
-	local survivalOfTheFittest = GetSpellInfo(33853)		-- Survival of the Fittest
-	local protectorOfThePack = GetSpellInfo(57873)			-- Protector of the Pack
 	local dkBladeBarrier = GetSpellInfo(49182)				-- Blade Barrier
 	local dkToughness = GetSpellInfo(49042)					-- Toughness
 	local dkAnticipation = GetSpellInfo(55129)				-- Anticipation
@@ -1213,27 +1253,27 @@ do
 				local specName, t1, t2, t3 = TalentWeight(r.talents[r.active], class)
 
 				if (class == "PRIEST") then
-					role = ((t1 + t2) > t3) and "healer" or "caster"
+					role = ((t1 + t2) > t3) and "healer" or "caster"		-- 1=Disc, 2=Holy, 3=Shadow
 				elseif (class == "WARRIOR") then
-					role = ((t1 + t2) > t3) and "melee" or "tank" 
+					role = (self:GUIDHasTalent(guid, warriorDefiance) and t3 >= t1) and "tank" or (((t1 + t3) > t2) and "melee" or "tank")
 				else
 					local heavy = (t1 > t2 and t1 > t3 and 1) or (t2 > t1 and t2 > t3 and 2) or (t3 > t1 and t3 > t2 and 3) or 0
 					if (class == "PALADIN") then
-						role = heavy == 1 and "healer" or heavy == 2 and "tank" or heavy == 3 and "melee"
+						role = heavy == 1 and "melee" or heavy == 2 and "healer" or heavy == 3 and "tank"
 
 					elseif (class == "DRUID") then
-						if (heavy == 2) then
-							if (self:GUIDHasTalent(guid, survivalOfTheFittest) and self:GUIDHasTalent(guid, protectorOfThePack)) then
-								role = "tank"
-							else
-								role = "melee"
-							end
+						if (
+							self:GUIDHasTalent(guid, druidThickHide)
+							or self:GUIDHasTalent(guid, druidFeralInstinct)
+							or (self:GUIDHasTalent(guid, druidIntensity) and t1 > t2)
+						) then
+							role = "tank"
 						else
-							role = heavy == 1 and "caster" or "healer"
+							role = heavy == 1 and "melee" or heavy == 2 and "healer" or "caster"
 						end
 
 					elseif (class == "SHAMAN") then
-						role = heavy == 1 and "caster" or heavy == 2 and "melee" or heavy == 3 and "healer"
+						role = heavy == 1 and "caster" or heavy == 2 and "healer" or heavy == 3 and "melee"
 					end
 				end
 			end
