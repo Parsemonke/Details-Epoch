@@ -71,31 +71,18 @@ end
 --return the specialization of the player it self
 
 local specIDs = {
-	["MAGE"] = {62, 63, 64},
+	-- Epoch server talent tree order.
+	["MAGE"] = {63, 64, 62},
 	["PRIEST"] = {256, 257, 258},
-	["ROGUE"] = {259, 260, 261},
-	["WARLOCK"] = {265, 266, 267},
-	["WARRIOR"] = {71, 72, 73},
-	["PALADIN"] = {65, 66, 70},
+	["ROGUE"] = {260, 259, 261},
+	["WARLOCK"] = {267, 265, 266},
+	["WARRIOR"] = {71, 73, 72},
+	["PALADIN"] = {70, 65, 66},
 	["DEATHKNIGHT"] = {250, 251, 252},
-	["DRUID"] = {102, 103, 104, 105},
-	["HUNTER"] = {253, 254, 255},
-	["SHAMAN"] = {262, 263, 264},
+	["DRUID"] = {103, 105, 102},
+	["HUNTER"] = {253, 255, 254},
+	["SHAMAN"] = {262, 264, 263},
 }
-
-local function GetFeralSubSpec(unit)
-	--57881 = Natural Reactions - Increase bear dodge and regen rage on dodge.
-	--other options:
-	--57877 = Protector of the Pack - Increase attack power by 6% and reduced damage taken by 12% in bear form.
-	--16858 = Feral Aggression (0 points in bear) - Increased attack power reduction of demo roar and increase ferocious bite damage.
-	--16931 = Thick Hide - Increase armor from cloth and leather items. 
-	local points = LibGroupTalents:UnitHasTalent(unit, GetSpellInfo(57881), LibGroupTalents:GetActiveTalentGroup(unit))
-	if points and points > 0 then 
-		return 3 -- we are a guardian druid
-	else
-		return 2
-	end
-end
 
 function DF.GetSpecialization(unit)
 	if not unit then unit = "player" end
@@ -107,15 +94,7 @@ function DF.GetSpecialization(unit)
 		if pointsSpent ~= nil then
 			if maxPoints < pointsSpent then
 				maxPoints = pointsSpent
-				if select(2, UnitClass(unit)) == "DRUID" and i >= 2 then
-					if i == 3 then 
-						specIdx = 4
-					elseif i == 2 then 
-						specIdx = GetFeralSubSpec(unit)
-					end
-				else
-					specIdx = i
-				end
+				specIdx = i
 			end
 		end
 	end
@@ -3294,15 +3273,16 @@ end
 
 local specs_per_class = {
 	["DEATHKNIGHT"] = {250, 251, 252},
-	["WARRIOR"] = {71, 72, 73},
-	["MAGE"] = {62, 63, 64},
-	["ROGUE"] = {259, 260, 261},
-	["DRUID"] = {102, 103, 104, 105},
-	["HUNTER"] = {253, 254, 255},
-	["SHAMAN"] = {262, 263, 254},
+	-- Epoch server talent tree order.
+	["WARRIOR"] = {71, 73, 72},
+	["MAGE"] = {63, 64, 62},
+	["ROGUE"] = {260, 259, 261},
+	["DRUID"] = {103, 105, 102},
+	["HUNTER"] = {253, 255, 254},
+	["SHAMAN"] = {262, 264, 263},
 	["PRIEST"] = {256, 257, 258},
-	["WARLOCK"] = {265, 266, 267},
-	["PALADIN"] = {65, 66, 70},
+	["WARLOCK"] = {267, 265, 266},
+	["PALADIN"] = {70, 65, 66},
 }
 
 function DF:GetClassSpecIDs (class)
@@ -3634,34 +3614,33 @@ DF.SpecListByClass = {
 	},
 	["WARRIOR"] = {
 		71,
-		72,
 		73,
+		72,
 	},
 	["MAGE"] = {
-		62,
 		63,
 		64,
+		62,
 	},
 	["ROGUE"] = {
-		259,
 		260,
+		259,
 		261,
 	},
 	["DRUID"] = {
-		102,
 		103,
-		104,
 		105,
+		102,
 	},
 	["HUNTER"] = {
 		253,
-		254,
 		255,
+		254,
 	},
 	["SHAMAN"] = {
 		262,
-		263,
 		264,
+		263,
 	},
 	["PRIEST"] = {
 		256,
@@ -3669,14 +3648,14 @@ DF.SpecListByClass = {
 		258,
 	},
 	["WARLOCK"] = {
+		267,
 		265,
 		266,
-		267,
 	},
 	["PALADIN"] = {
+		70,
 		65,
 		66,
-		70,
 	},
 }
 
