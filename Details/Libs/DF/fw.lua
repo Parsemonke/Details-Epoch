@@ -115,7 +115,18 @@ end
 
 function DF.GetSpecializationInfo(index)
 	local _, class = UnitClass("player")
-	return specIDs[class] and specIDs[class][index] or 0
+	local specID = specIDs[class] and specIDs[class][index] or 0
+
+	-- WotLK: Druids share the "Feral" talent tree for both cat (dps) and bear (tank).
+	-- Details uses MoP spec IDs only as an internal icon key; use 104 (Guardian) when the role is tank.
+	if (class == "DRUID" and specID == 103) then
+		local role = LibGroupTalents and LibGroupTalents:GetUnitRole("player")
+		if (role == "tank") then
+			return 104
+		end
+	end
+
+	return specID
 end
 
 function DF.GetSpecializationRole (...)
