@@ -23,6 +23,14 @@
 
 	local AddUnique = DetailsFramework.table.addunique --framework
 	local UnitGroupRolesAssigned = DetailsFramework.UnitGroupRolesAssigned --framework
+	local LibGroupTalents = LibStub ("LibGroupTalents-1.0")
+
+	local LibGroupTalentRoleToDetailsRole = {
+		melee = "DAMAGER",
+		caster = "DAMAGER",
+		healer = "HEALER",
+		tank = "TANK",
+	}
 
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 --> constants
@@ -246,6 +254,14 @@
 				else
 					if (_detalhes.pvp_as_group and (_detalhes.tabela_vigente and _detalhes.tabela_vigente.is_pvp) and _detalhes.is_in_battleground) then
 						novo_objeto.grupo = true
+					end
+				end
+
+				if (novo_objeto.grupo and serial) then
+					local role = LibGroupTalentRoleToDetailsRole [LibGroupTalents:GetGUIDRole (serial)]
+					if (role) then
+						novo_objeto.role = role
+						novo_objeto.isTank = role == "TANK" or nil
 					end
 				end
 
