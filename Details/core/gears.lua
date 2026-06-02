@@ -427,6 +427,15 @@ function _detalhes:ResetSpecCache (forced)
 			if (type (my_spec) == "number") then
 				local spec_number = DetailsFramework.GetSpecializationInfo (my_spec)
 				if (type (spec_number) == "number") then
+					-- WotLK druid feral tree -> use guardian icon if the player is a tank.
+					local _, playerClass = UnitClass("player")
+					if (playerClass == "DRUID" and spec_number == 103) then
+						local role = LibGroupTalents and LibGroupTalents:GetUnitRole("player")
+						if (role == "tank") then
+							spec_number = 104
+						end
+					end
+
 					local pguid = UnitGUID (_detalhes.playername)
 					if (pguid) then
 						_detalhes.cached_specs [pguid] = spec_number
@@ -2160,6 +2169,16 @@ function _detalhes:LibGroupTalents_Update(event, guid, unit, dominant_tree_id, n
 	_detalhes.cached_talents [guid] = talent_string
 	local class, _, _, _, name = select(2, GetPlayerInfoByGUID(guid))
 	local specID = DetailsFramework.GetSpecializationID(class, dominant_tree_id)
+
+	-- WotLK: Druids have a single "Feral" talent tree for both cat (dps) and bear (tank).
+	-- LibGroupTalents can detect the role as "tank" for bear tanks; use the Guardian (104) icon in this case.
+	if (class == "DRUID" and specID == 103) then
+		local role = LibGroupTalents:GetGUIDRole(guid)
+		if (role == "tank") then
+			specID = 104
+		end
+	end
+
 	if specID then
 		if (not _detalhes.class_specs_coords [specID]) then
 			_detalhes:Msg("(error) Spec ID Invalid: " .. specID .. " for " .. name)
@@ -2205,6 +2224,29 @@ local function updateActorRole(combat, guid, role)
 	return updated
 end
 
+local function updateActorSpec(combat, guid, specID)
+	local updated
+
+	if (not combat) then
+		return
+	end
+
+	for containerIndex = 1, 4 do
+		local container = combat[containerIndex]
+		if (container and container.ListActors) then
+			for _, actor in container:ListActors() do
+				if (actor.serial == guid) then
+					actor.spec = specID
+					container.need_refresh = true
+					updated = true
+				end
+			end
+		end
+	end
+
+	return updated
+end
+
 function _detalhes:LibGroupTalents_RoleChange(event, guid, unit, newRole, oldRole)
 	local role = libGroupTalentRoleToDetailsRole[newRole] or "NONE"
 	local updated
@@ -2220,6 +2262,32 @@ function _detalhes:LibGroupTalents_RoleChange(event, guid, unit, newRole, oldRol
 	if (_detalhes.tabela_historico and _detalhes.tabela_historico.tabelas) then
 		for _, combat in ipairs(_detalhes.tabela_historico.tabelas) do
 			updated = updateActorRole(combat, guid, role) or updated
+		end
+	end
+
+	-- Same druid feral tree caveat: switch the spec icon between Feral (103) and Guardian (104) based on role.
+	local class = select(2, GetPlayerInfoByGUID(guid))
+	if (class == "DRUID") then
+		local currentSpec = _detalhes.cached_specs[guid]
+		if (currentSpec == 103 or currentSpec == 104) then
+			local desiredSpec = role == "TANK" and 104 or 103
+			if (desiredSpec ~= currentSpec) then
+				_detalhes.cached_specs[guid] = desiredSpec
+
+				if (_detalhes.tabela_vigente) then
+					updated = updateActorSpec(_detalhes.tabela_vigente, guid, desiredSpec) or updated
+				end
+
+				if (_detalhes.tabela_overall) then
+					updated = updateActorSpec(_detalhes.tabela_overall, guid, desiredSpec) or updated
+				end
+
+				if (_detalhes.tabela_historico and _detalhes.tabela_historico.tabelas) then
+					for _, combat in ipairs(_detalhes.tabela_historico.tabelas) do
+						updated = updateActorSpec(combat, guid, desiredSpec) or updated
+					end
+				end
+			end
 		end
 	end
 
