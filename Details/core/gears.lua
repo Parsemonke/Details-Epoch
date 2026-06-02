@@ -2174,6 +2174,64 @@ function _detalhes:LibGroupTalents_Update(event, guid, unit, dominant_tree_id, n
 end
 LibGroupTalents.RegisterCallback (_detalhes, "LibGroupTalents_Update")
 
+local libGroupTalentRoleToDetailsRole = {
+	melee = "DAMAGER",
+	caster = "DAMAGER",
+	healer = "HEALER",
+	tank = "TANK",
+}
+
+local function updateActorRole(combat, guid, role)
+	local updated
+
+	if (not combat) then
+		return
+	end
+
+	for containerIndex = 1, 4 do
+		local container = combat[containerIndex]
+		if (container and container.ListActors) then
+			for _, actor in container:ListActors() do
+				if (actor.serial == guid) then
+					actor.role = role
+					actor.isTank = role == "TANK" or nil
+					container.need_refresh = true
+					updated = true
+				end
+			end
+		end
+	end
+
+	return updated
+end
+
+function _detalhes:LibGroupTalents_RoleChange(event, guid, unit, newRole, oldRole)
+	local role = libGroupTalentRoleToDetailsRole[newRole] or "NONE"
+	local updated
+
+	if (_detalhes.tabela_vigente) then
+		updated = updateActorRole(_detalhes.tabela_vigente, guid, role) or updated
+	end
+
+	if (_detalhes.tabela_overall) then
+		updated = updateActorRole(_detalhes.tabela_overall, guid, role) or updated
+	end
+
+	if (_detalhes.tabela_historico and _detalhes.tabela_historico.tabelas) then
+		for _, combat in ipairs(_detalhes.tabela_historico.tabelas) do
+			updated = updateActorRole(combat, guid, role) or updated
+		end
+	end
+
+	if (updated) then
+		if (_detalhes.debug) then
+			_detalhes:Msg("(debug) saved role " .. role .. " for " .. (unit or guid))
+		end
+		_detalhes:ScheduleWindowUpdate(2, true)
+	end
+end
+LibGroupTalents.RegisterCallback (_detalhes, "LibGroupTalents_RoleChange")
+
 
 
 --------------------------------------------------------------------------------------------------------------------------------------------
@@ -2243,4 +2301,3 @@ function Details:DecompressData (data, dataType)
 		return data
 	end
 end
-
