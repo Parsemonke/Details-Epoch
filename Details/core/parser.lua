@@ -4243,6 +4243,17 @@ function _detalhes.parser_functions:ACTIVE_TALENT_GROUP_CHANGED()
 		if specID and specID ~= 0 then
 			local guid = UnitGUID("player")
 			if guid then
+				-- WotLK: druids use the same feral tree for cat (dps) and bear (tank).
+				-- If LibGroupTalents detects the player as a tank, use the Guardian (104) icon.
+				if (specID == 103) then
+					local _, class = UnitClass("player")
+					if (class == "DRUID") then
+						local role = LibGroupTalents and LibGroupTalents:GetUnitRole("player")
+						if (role == "tank") then
+							specID = 104
+						end
+					end
+				end
 				_detalhes.cached_specs[guid] = specID
 			end
 		end
